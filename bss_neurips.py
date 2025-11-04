@@ -858,7 +858,6 @@ def _clip_for_selection(X, y, b_x, b_y):
     return Xc, yc
 
 def _delta_sensitivity(n, s, r, b_x, b_y):
-    # same delta you already use before:  1/(2n)*(b_y^2 + 2 b_y b_x r sqrt(s) + b_x^2 r^2 s)
     return (b_y**2 + 2*b_y*b_x*r*np.sqrt(s) + (b_x**2)*(r**2)*s) / (2.0*n)
 
 def _draw_from_prob(prob_vec, u):
@@ -982,7 +981,7 @@ def _compute_utility_loss_batch(X_pre, y_pre, eps, Lambda_ridge, r, selection):
     Given *preprocessed* (unclipped) data and a selection dict that already
     contains drawn supports for all four methods (each p × T), compute the Obj-Pert
     utility-loss gaps for each draw, per method. Uses selection['opt_support'] as
-    the non-private baseline support for problem A.
+    the non-private baseline support.
     Returns:
       gap_topk, gap_mistakes, gap_lasso, gap_mcmc  (each length T)
     """
@@ -1007,7 +1006,6 @@ def _compute_utility_loss_batch(X_pre, y_pre, eps, Lambda_ridge, r, selection):
     return gap_mistakes, gap_topk, gap_lasso, gap_mcmc
 
 
-# A light-weight Obj-Pert that returns beta_priv (for test-MSE). Keeps your noise draw and QP, but returns coefficients.
 def _objpert_beta(X, y, support_vec, eps, gamma, r_bound, rng=np.random.default_rng()):
     active_idx = np.nonzero(support_vec)[0]
     Xs = X[:, active_idx]
@@ -1088,13 +1086,13 @@ def objpert_least_squares(
         X, y,                     # n × p NumPy arrays (already clipped/pre‑processed)
         support_vec,              # length‑p boolean / {0,1} mask of active features
         eps,                      # ε  (ignore δ)
-        gamma,                    # γ   (ridge weight in problem A)
+        gamma,                    # γ   (ridge weight)
         r_bound,                  # radius ‖θ‖₂ ≤ r_bound that defines 𝔽
         opt_support_vec,
         rng=np.random.default_rng()
     ):
     """
-    Implements the modified Obj‑Pert algorithm you described,
+    Implements Obj‑Pert,
     with   ζ = 2 s^{3/2},   λ = s,   Δ = 2 λ / ε,
     and solves both the private and non‑private QPs in Gurobi.
 
@@ -1103,9 +1101,9 @@ def objpert_least_squares(
     theta_priv : ndarray, shape (s,)
         Private parameter vector.
     theta_hat  : ndarray, shape (s,)
-        Non‑private minimiser (problem A).
+        Non‑private minimiser.
     gap        : float
-        Objective value of problem A at θ_priv  minus  optimum value.
+        Objective value at θ_priv  minus  optimum value.
         (= prediction‑accuracy loss)
     """
 
@@ -1169,7 +1167,7 @@ def objpert_least_squares(
     Xs_np          = X[:, active_idx]          # n × s   (s = |support|)
 
     # ------------------------------------------------------------
-    # 5.  Build & solve ***non‑private*** problem A
+    # 5.  Build & solve ***non‑private*** problem
     #      (no Δ term, no noise term)
     # ------------------------------------------------------------
     XtX_np      = Xs_np.T @ Xs_np                         # s × s
@@ -1191,7 +1189,7 @@ def objpert_least_squares(
     theta_hat = theta2.X.copy()
     
     # ------------------------------------------------------------
-    # 6.  Evaluate problem A's objective at both solutions
+    # 6.  Evaluate objective at both solutions
     # ------------------------------------------------------------
     
     obj_np  = c_loss * np.linalg.norm(y - Xs_np @ theta_hat)**2 \
@@ -1215,8 +1213,6 @@ def preprocess_objpert(X: np.ndarray, y: np.ndarray, s: float | int):
     X : ndarray, shape (n_samples, n_features)
     y : ndarray, shape (n_samples,)
     s : int or float
-        If you follow the paper literally, s is an integer (s‑sparsity).
-        It can be passed as float here – only its value is used.
 
     Returns
     -------
