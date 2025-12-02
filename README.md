@@ -1,5 +1,5 @@
 # Differentially Private High-dimensional Variable Selection via Integer Programming
-This is the offical repo of the NeurIPS 2025 paper **Differentially Private High-dimensional Variable Selection via Integer Programming**
+This is the offical repo of the NeurIPS 2025 paper **[Differentially Private High-dimensional Variable Selection via Integer Programming](https://www.arxiv.org/abs/2510.22062)**
 
 ## Requirements
 
